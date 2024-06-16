@@ -1,8 +1,10 @@
 ## **Building GPT**
 This repo is referenced from the [build-nanogpt](https://github.com/karpathy/build-nanogpt) by Andrej Karpathy. Thanks!
 
-![](assets/gpt.png)  
-Fig a. GPT architecture
+<div style="display: flex; flex-direction: column; align-items: center;">
+<img src="assets/gpt.png" alt="" height="500">
+<p style="text-align: center;">Fig a. GPT architecture</p>
+</div>
 
 ### **Papers 📄**  
 I am reading these papers:  

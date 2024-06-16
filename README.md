@@ -1,17 +1,24 @@
 ## **Building GPT**
 This repo is referenced from the [build-nanogpt](https://github.com/karpathy/build-nanogpt) by Andrej Karpathy. Thanks!
 
+<div style="display: flex; flex-direction: column; align-items: center;">
+<img src="assets/gpt.png" alt="" width="430" height="500">
+<p style="text-align: center;">Fig a. GPT architecture</p>
+</div>
+
 ### **Papers 📄**  
 I am reading these papers:  
 ✅ [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)  
-☑️ [Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165)
+☑️ [Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165)  
+✅ [Attention is All You Need](https://arxiv.org/abs/1706.03762)
 
 ### **Goals 🎯**
 ✅ Read the [GPT-2 paper](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf) for baseline of the model architecture.  
 ✅ Inspect the source code of the GPT-2 model from OpenAI & HuggingFace.  
-☑️ Prepare a notebook to experiment the model and outputs as done by Andrej Karpathy.  
+✅ Prepare a notebook to experiment the model and outputs as done by Andrej Karpathy.  
+✅ Implement the GPT-2 model from scratch with diagrams and explanations.
 ☑️ Code the training script for GPT-2 model.  
-☑️ Work on optimization and training the model on a example dataset.
+☑️ Work on optimization and training the model on a example dataset.  
 
 ### **Github Repositories**
 🌐 [build-nanogpt](https://github.com/karpathy/build-nanogpt) - Implementation by Andrej Karpathy.    

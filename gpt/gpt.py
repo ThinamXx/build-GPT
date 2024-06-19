@@ -15,6 +15,19 @@ class GPTConfig:
     device: str = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+class FeedForwardBlock(nn.Module):
+    def __init__(self, config: GPTConfig):
+        super().__init__()
+        self.c_fc = nn.Linear(self.emb_size, self.emb_size * 4)  # W_1 and b_1
+        self.c_proj = nn.Linear(self.emb_size * 4, self.emb_size)  # W_2 and b_2
+        self.gelu = nn.GELU(approximate="tanh")
+
+    def forward(self, x):
+        # (batch_size, seq_len, emb_size) --> (batch_size, seq_len, d_ff) --> (batch_size, seq_len, emb_size)
+        x = self.c_proj(self.gelu(self.c_fc(x)))
+        return x
+
+
 class TransformerBlock(nn.Module):
 
     def __init__(self, config: GPTConfig):
@@ -22,11 +35,11 @@ class TransformerBlock(nn.Module):
         self.ln_1 = nn.LayerNorm(config.emb_size)
         self.ln_2 = nn.LayerNorm(config.emb_size)
         self.attn = MaskedMultiHeadAttention(config)
-        self.mlp = FeedForwardLayer(config) # also known as MLP. 
+        self.mlp = FeedForwardBlock(config)  # also known as MLP.
 
     def forward(self, x, mask=None):
         # mentioned in the paper Language Models are Unsupervised Multitask Learners
-        # in section 2.3, layer normalization is applied before the attention.
+        # in section 2.3, layer normalization is applied before the attention & FFN.
         x = x + self.attn(self.ln_1(x), mask=mask)
         x = x + self.mlp(self.ln_2(x))
         return x

@@ -12,7 +12,7 @@ I am reading these papers:
 ✅ [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)  
 ☑️ [Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165)  
 ✅ [Attention is All You Need](https://arxiv.org/abs/1706.03762)  
-☑️ [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415)
+✅ [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415)
 
 
 ### **Goals 🎯**
@@ -20,8 +20,8 @@ I am reading these papers:
 ✅ Inspect the source code of the GPT-2 model from OpenAI & HuggingFace.  
 ✅ Prepare a notebook to experiment the model and outputs as done by Andrej Karpathy.  
 ✅ Implement the GPT-2 model from scratch with diagrams and explanations.  
-✅ Implement the transformer block of the model from scratch.  
-✅ Implement the FeedForwardBlock of the model from scratch.  
+✅ Implement the transformer block of the model with attention & FFN.  
+✅ Implement the FeedForwardBlock of the model with GELU activation.  
 ✅ Implement the MultiHeadAttentionBlock of the model from scratch.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  

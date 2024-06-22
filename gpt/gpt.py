@@ -1,4 +1,6 @@
 import math
+import tiktoken
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -120,6 +122,24 @@ class GPT(nn.Module):
         )
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
+    def forward(self, idx: torch.Tensor, mask=None):
+        # input idx is of shape (batch_size, seq_len)
+        seq_len = idx.size(1)
+
+        # concatenate token embedding and positional embedding
+        # (batch_size, seq_len, emb_size) + (seq_len, emb_size) --> (batch_size, seq_len, emb_size)
+        h = self.transformer.wte(idx) + self.transformer.wpe(
+            torch.arange(0, seq_len, dtype=torch.long, device=idx.device)
+        )
+
+        # apply transformer blocks as shown in ./notebooks/gpt.ipynb
+        for block in self.transformer.h:
+            h = block(h, mask=mask)
+
+        # (batch_size, seq_len, emb_size) --> (batch_size, seq_len, vocab_size)
+        logits = self.lm_head(self.transformer.ln_f(h))
+        return logits
+
     # code taken from Andrej Karpathy's nanoGPT:
     # https://github.com/karpathy/nanoGPT/blob/master/model.py#L206C5-L261C21
     @classmethod
@@ -198,8 +218,3 @@ class GPT(nn.Module):
                     sd[k].copy_(sd_hf[k])
 
         return model
-
-
-if __name__ == "__main__":
-    model = GPT.from_pretrained("gpt2") # loading the gpt2 checkpoints from HF using our custom GPT class
-    print("model loaded successfully!")

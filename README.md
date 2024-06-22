@@ -25,6 +25,7 @@ I am reading these papers:
 ✅ Implement the FeedForwardBlock of the model with GELU activation.  
 ✅ Implement the MultiHeadAttentionBlock of the model from scratch.  
 ✅ Load the GPT-2 model checkpoints from HuggingFace using custom GPT architecture class.  
+✅ Implement the inference script to generate text from the model.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

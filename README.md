@@ -12,7 +12,8 @@ I am reading these papers:
 ✅ [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)  
 ☑️ [Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165)  
 ✅ [Attention is All You Need](https://arxiv.org/abs/1706.03762)  
-✅ [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415)
+✅ [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415)  
+✅ [Using the Output Embedding to Improve Language Models](https://arxiv.org/abs/1608.05859)  
 
 
 ### **Goals 🎯**
@@ -26,6 +27,8 @@ I am reading these papers:
 ✅ Implement the MultiHeadAttentionBlock of the model from scratch.  
 ✅ Load the GPT-2 model checkpoints from HuggingFace using custom GPT architecture class.  
 ✅ Implement the inference script to generate text from the model.  
+✅ Implement the data loading pipeline for the model and play with the data.  
+☑️ Learn and understand the concept of weight tying in the Transformer model.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 
@@ -41,4 +44,6 @@ I am reading these papers:
 ### **Important Notes 🍀**
 💡 If we have a pretrained model, we can plot the weights of the positional embeddings + the weights of the token embeddings. If we see a lots of fluctuations and noise with the weights, then the model is not trained completely or the model is not converged yet. So, if the plot is smooth, then the model is trained well.  
 
-💡 We can calculate the reasonable starting point for the randomly initialized weights of the model by using the vocabulary size and the loss function used in the model. In this work on GPT2, the vocabulary size is 50257 and every vocab element is getting roughly 1/50257 probability of being selected which means that we are getting -log(1/50257) = 10.82 loss if we randomly initialize the weights keeping in mind that the cross entropy loss is used in the model. The cross entropy loss is the negative log likelihood of the true class. So, the loss should be around 10.82 if the model is randomly initialized.
+💡 We can calculate the reasonable starting point for the randomly initialized weights of the model by using the vocabulary size and the loss function used in the model. In this work on GPT2, the vocabulary size is 50257 and every vocab element is getting roughly 1/50257 probability of being selected which means that we are getting -log(1/50257) = 10.82 loss if we randomly initialize the weights keeping in mind that the cross entropy loss is used in the model. The cross entropy loss is the negative log likelihood of the true class. So, the loss should be around 10.82 if the model is randomly initialized.  
+
+💡 The input embeddings at the bottom of the Transformer and the output embeddings coming from the linear or projection layer at the top, contains 2D tensors exactly of same shape and elements pointing to the same data pointer. This is known as weight tying scheme with the intuition that if two tokens are very similar semantically then we would expect them to have similar probabilities at the output of the Transformer. You can find this implementation in original [GPT2 source code](https://github.com/openai/gpt-2/blob/master/src/model.py#L171C8-L171C58) from OpenAI. 

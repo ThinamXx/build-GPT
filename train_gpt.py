@@ -15,26 +15,55 @@ elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
     device = "mps"
 print(f"using device: {device}")
 
-# read the text data.
-PATH = "data/input.txt"
-with open(PATH, "r") as f:
-    text = f.read()
-data = text[:1000]  # read the first 1000 characters.
 
-tokenizer = tiktoken.get_encoding("gpt2")  # get the tokenizer.
-tokens = tokenizer.encode(data)  # encode the text.
+class DataLoader:
 
-B, T = 3, 30  # batch size and sequence length.
-tokens_tensors = torch.tensor(
-    tokens[: B * T + 1], dtype=torch.long
-)  # convert the tokens to tensor.
-x = tokens_tensors[:-1].view(B, T)  # (batch, seq_len)
-y = tokens_tensors[1:].view(B, T)  # (batch, seq_len)
-x, y = x.to(device), y.to(device)
+    def __init__(self, batch_size, seq_len):
+        self.batch_size = batch_size
+        self.seq_len = seq_len
 
-# initialize the model and get the logits.
-model = GPT(GPTConfig())
-model.to(device)
-logits, loss = model(x, y)  # (batch, seq_len, vocab_size)
-print(logits.shape)
-print(loss)
+        with open("data/input.txt", "r") as f:
+            text = f.read()
+        tokenizer = tiktoken.get_encoding("gpt2")
+        tokens = tokenizer.encode(text)
+        self.tokens = torch.tensor(tokens)
+
+        print(f"total tokens: {len(self.tokens)}")
+        print(f"1 epoch has {len(self.tokens) // (batch_size * seq_len)} batches.")
+
+        # state variables.
+        self.cur_pos = 0
+
+    def next_batch(self):
+        B, T = self.batch_size, self.seq_len
+        tokens_tensors = self.tokens[self.cur_pos : self.cur_pos + B * T + 1]
+        x = (tokens_tensors[:-1]).view(B, T)  # (batch, seq_len)
+        y = (tokens_tensors[1:]).view(B, T)
+        self.cur_pos += B * T  # move the pointer.
+
+        if self.cur_pos + (B * T + 1) >= len(self.tokens):
+            self.cur_pos = 0
+
+        return x, y
+
+
+def train():
+    # initialize the model.
+    model = GPT(GPTConfig())
+    model.to(device)
+
+    train_loader = DataLoader(batch_size=4, seq_len=32)
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
+    for i in range(50):
+        x, y = train_loader.next_batch()
+        x, y = x.to(device), y.to(device)
+        optimizer.zero_grad()
+        _, loss = model(x, y)
+        loss.backward()
+        optimizer.step()
+        print(f"step: {i}, loss: {loss.item()}")
+
+
+if __name__ == "__main__":
+    train()

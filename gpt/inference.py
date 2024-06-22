@@ -2,15 +2,22 @@ import tiktoken
 import torch
 import torch.nn.functional as F
 
-from gpt import GPT
+from model import GPT, GPTConfig
 
 
 def generate_text(prompt, max_len=30, num_return_sequences=1):
     """Function to generate text using the GPT model."""
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = "mps"
+    print(f"using device: {device}")
 
-    model = GPT.from_pretrained("gpt2")  # loading the gpt2 checkpoints from HF.
+    # model = GPT.from_pretrained("gpt2")  # loading the gpt2 checkpoints from HF.
+    model = GPT(GPTConfig())  # initialize the model with random weights.
     model.eval()
-    model = model.to("cuda")
+    model = model.to(device)
 
     tokenizer = tiktoken.get_encoding("gpt2")  # get the tokenizer
     tokens = tokenizer.encode(prompt)  # encode the text
@@ -20,12 +27,12 @@ def generate_text(prompt, max_len=30, num_return_sequences=1):
     tokens = tokens.unsqueeze(0).repeat(
         num_return_sequences, 1
     )  # repeat the tokens for num_samples times.
-    x = tokens.to("cuda")  # move the tokens to cuda. (batch, seq_len)
+    x = tokens.to(device)  # move the tokens to cuda. (batch, seq_len)
 
     # generate the text.
     while x.size(1) < max_len:
         with torch.no_grad():
-            logits = model(x)  # (batch, seq_len, vocab_size)
+            logits, _ = model(x)  # (batch, seq_len, vocab_size)
             # get the last token logits.
             logits = logits[:, -1, :]  # (batch, vocab_size)
             probs = F.softmax(logits, dim=-1)  # get the probabilities.

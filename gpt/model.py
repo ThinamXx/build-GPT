@@ -69,7 +69,7 @@ class CausalMultiHeadAttention(nn.Module):
         # (batch_size, h, seq_len, seq_len) @ (batch_size, h, seq_len, d_k) --> (batch_size, h, seq_len, d_k)
         return (attention_scores @ value), attention_scores
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
         B, S, C = x.size()  # batch_size, seq_len, emb_size
         query, key, value = self.c_attn(x).split(self.n_embd, dim=2)
 
@@ -96,10 +96,10 @@ class TransformerBlock(nn.Module):
         self.attn = CausalMultiHeadAttention(config)
         self.mlp = FeedForwardBlock(config)  # also known as MLP.
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
         # mentioned in the paper Language Models are Unsupervised Multitask Learners
         # in section 2.3, layer normalization is applied before the attention & FFN.
-        x = x + self.attn(self.ln_1(x), mask=mask)
+        x = x + self.attn(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
         return x
 
@@ -122,9 +122,12 @@ class GPT(nn.Module):
         )
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
 
-    def forward(self, idx: torch.Tensor, mask=None):
+    def forward(self, idx: torch.Tensor, targets=None):
         # input idx is of shape (batch_size, seq_len)
         seq_len = idx.size(1)
+        assert (
+            seq_len <= self.config.block_size
+        ), "Cannot forward, model block size is exhausted."
 
         # concatenate token embedding and positional embedding
         # (batch_size, seq_len, emb_size) + (seq_len, emb_size) --> (batch_size, seq_len, emb_size)
@@ -134,11 +137,17 @@ class GPT(nn.Module):
 
         # apply transformer blocks as shown in ./notebooks/gpt.ipynb
         for block in self.transformer.h:
-            h = block(h, mask=mask)
+            h = block(h)
 
         # (batch_size, seq_len, emb_size) --> (batch_size, seq_len, vocab_size)
         logits = self.lm_head(self.transformer.ln_f(h))
-        return logits
+        loss = None
+        if targets is not None:
+            # calculate the loss
+            loss = F.cross_entropy(
+                logits.view(-1, logits.size(-1)), targets.view(-1)
+            )  # (batch_size * seq_len, vocab_size), (batch_size * seq_len)
+        return logits, loss
 
     # code taken from Andrej Karpathy's nanoGPT:
     # https://github.com/karpathy/nanoGPT/blob/master/model.py#L206C5-L261C21

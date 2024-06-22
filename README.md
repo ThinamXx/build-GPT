@@ -37,3 +37,8 @@ I am reading these papers:
 🌐 [modeling-gpt2](https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py) - PyTorch implementation of GPT-2 by HuggingFace.  
 🌐 [Meta-llama](https://github.com/ThinamXx/Meta-llama/tree/main) - Implementation of Llama by Thinam Tamang.  
 
+
+### **Important Notes 🍀**
+💡 If we have a pretrained model, we can plot the weights of the positional embeddings + the weights of the token embeddings. If we see a lots of fluctuations and noise with the weights, then the model is not trained completely or the model is not converged yet. So, if the plot is smooth, then the model is trained well.  
+
+💡 We can calculate the reasonable starting point for the randomly initialized weights of the model by using the vocabulary size and the loss function used in the model. In this work on GPT2, the vocabulary size is 50257 and every vocab element is getting roughly 1/50257 probability of being selected which means that we are getting -log(1/50257) = 10.82 loss if we randomly initialize the weights keeping in mind that the cross entropy loss is used in the model. The cross entropy loss is the negative log likelihood of the true class. So, the loss should be around 10.82 if the model is randomly initialized.

@@ -1,4 +1,6 @@
 import tiktoken
+import time
+
 import torch
 import torch.nn.functional as F
 
@@ -54,17 +56,21 @@ def train():
     model = GPT(GPTConfig())
     model.to(device)
 
-    train_loader = DataLoader(batch_size=4, seq_len=32)
+    train_loader = DataLoader(batch_size=16, seq_len=1024)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
     for i in range(50):
+        t0 = time.time()
         x, y = train_loader.next_batch()
         x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
         _, loss = model(x, y)
         loss.backward()
         optimizer.step()
-        print(f"step: {i}, loss: {loss.item()}")
+        torch.cuda.synchronize()  # wait for the computation to finish.
+        t1 = time.time()
+        dt = (t1 - t0) * 1000  # in milliseconds.
+        print(f"step: {i}, loss: {loss.item()} time: {dt:.2f}ms")
 
 
 if __name__ == "__main__":

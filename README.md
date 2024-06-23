@@ -28,7 +28,8 @@ I am reading these papers:
 ✅ Load the GPT-2 model checkpoints from HuggingFace using custom GPT architecture class.  
 ✅ Implement the inference script to generate text from the model.  
 ✅ Implement the data loading pipeline for the model and play with the data.  
-☑️ Learn and understand the concept of weight tying in the Transformer model.  
+✅ Work on initializing the random weights as mentioned in GPT-2 paper.  
+✅ Learn and understand the concept of weight tying in the Transformer model.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

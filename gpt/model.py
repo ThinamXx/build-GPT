@@ -32,6 +32,11 @@ class FeedForwardBlock(nn.Module):
     def forward(self, x):
         # (batch_size, seq_len, emb_size) --> (batch_size, seq_len, d_ff) --> (batch_size, seq_len, emb_size)
         x = self.c_proj(self.gelu(self.c_fc(x)))
+
+        # scaling the weights of residual stream mentioned in 2.3.Model of the GPT2 paper.
+        # https://github.com/karpathy/build-nanogpt/blob/master/train_gpt2.py#L49
+        self.c_proj.NANOGPT_SCALE_INIT = 1
+
         return x
 
 
@@ -46,6 +51,8 @@ class CausalMultiHeadAttention(nn.Module):
 
         self.c_attn = nn.Linear(self.n_embd, 3 * self.n_embd)  # W_q, W_k, W_v
         self.c_proj = nn.Linear(self.n_embd, self.n_embd)
+        # https://github.com/karpathy/build-nanogpt/blob/master/train_gpt2.py#L21
+        self.c_proj.NANOGPT_SCALE_INIT = 1
 
         # code taken from HF:
         # https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py#L142C9-L148C10
@@ -121,6 +128,27 @@ class GPT(nn.Module):
             )
         )
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
+
+        # weight sharing between token embedding and output layer.
+        self.transformer.wte.weight = self.lm_head.weight
+
+        # initialize weights.
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        """Initialize the weights of the model based on:
+        https://github.com/openai/gpt-2/blob/master/src/model.py
+        """
+        if isinstance(module, nn.Linear):
+            std = 0.02
+            if hasattr(module, "NANOGPT_SCALE_INIT"):
+                # weights of residual stream mentioned in 2.3.Model in paper.
+                std *= (2 * self.config.n_layer) ** -0.5
+            torch.nn.init.normal_(module.weight, mean=0.0, std=std)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, idx: torch.Tensor, targets=None):
         # input idx is of shape (batch_size, seq_len)

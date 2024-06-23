@@ -4,8 +4,10 @@ import torch.nn.functional as F
 
 from gpt.model import GPT, GPTConfig
 
+
 torch.manual_seed(2024)
-torch.cuda.manual_seed(2024)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(2024)
 
 # initialize the device.
 device = "cpu"

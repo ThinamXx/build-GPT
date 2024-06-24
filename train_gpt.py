@@ -15,7 +15,6 @@ torch.set_float32_matmul_precision(
     "high"
 )  # set "high" if GPU supports TF32 for 8x throughput.
 
-
 # initialize the device.
 device = "cpu"
 if torch.cuda.is_available():
@@ -62,7 +61,7 @@ def train():
     model.to(device)
     model = torch.compile(model)
 
-    train_loader = DataLoader(batch_size=2, seq_len=1024)
+    train_loader = DataLoader(batch_size=8, seq_len=1024)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
     for i in range(50):

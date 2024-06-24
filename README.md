@@ -14,6 +14,8 @@ I am reading these papers:
 ✅ [Attention is All You Need](https://arxiv.org/abs/1706.03762)  
 ✅ [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415)  
 ✅ [Using the Output Embedding to Improve Language Models](https://arxiv.org/abs/1608.05859)  
+☑️ [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)  
+☑️ [FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)  
 
 
 ### **Goals 🎯**
@@ -30,9 +32,9 @@ I am reading these papers:
 ✅ Implement the data loading pipeline for the model and play with the data.  
 ✅ Work on initializing the random weights as mentioned in GPT-2 paper.  
 ✅ Learn and understand the concept of weight tying in the Transformer model.  
-☑️ Read the [Automatic Mixed Precision](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html) for enabling mixed precision training.  
+✅ Read the [Automatic Mixed Precision](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html) for enabling mixed precision training and automatic type casting.    
 ✅ Enable the mixed precision training (TF32 & BF16) in the model training.  
-☑️ Read the documentation of [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) from PyTorch.  
+✅ Read the documentation of [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) from PyTorch.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 
@@ -43,6 +45,7 @@ I am reading these papers:
 🌐 [gpt-2](https://github.com/openai/gpt-2) - TensorFlow implementation of GPT-2 by OpenAI.  
 🌐 [modeling-gpt2](https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py) - PyTorch implementation of GPT-2 by HuggingFace.  
 🌐 [Meta-llama](https://github.com/ThinamXx/Meta-llama/tree/main) - Implementation of Llama by Thinam Tamang.  
+🌐 [flash-attention](https://github.com/Dao-AILab/flash-attention) - Implementation of Flash Attention by Tri Dao.  
 
 
 ### **Important Notes 🍀**

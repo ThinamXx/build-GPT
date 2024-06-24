@@ -11,6 +11,11 @@ torch.manual_seed(2024)
 if torch.cuda.is_available():
     torch.cuda.manual_seed(2024)
 
+torch.set_float32_matmul_precision(
+    "high"
+)  # set "high" if GPU supports TF32 for 8x throughput.
+
+
 # initialize the device.
 device = "cpu"
 if torch.cuda.is_available():
@@ -55,8 +60,9 @@ def train():
     # initialize the model.
     model = GPT(GPTConfig())
     model.to(device)
+    model = torch.compile(model)
 
-    train_loader = DataLoader(batch_size=16, seq_len=1024)
+    train_loader = DataLoader(batch_size=2, seq_len=1024)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
     for i in range(50):
@@ -64,13 +70,21 @@ def train():
         x, y = train_loader.next_batch()
         x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
-        _, loss = model(x, y)
+        # enable autocast to use bfloat16 as mentioned here:
+        # https://pytorch.org/docs/stable/amp.html#autocasting
+        with torch.autocast(device_type=device, dtype=torch.bfloat16):
+            logits, loss = model(x, y)
         loss.backward()
         optimizer.step()
         torch.cuda.synchronize()  # wait for the computation to finish.
         t1 = time.time()
         dt = (t1 - t0) * 1000  # in milliseconds.
-        print(f"step: {i}, loss: {loss.item()} time: {dt:.2f}ms")
+        tokens_per_sec = (train_loader.batch_size * train_loader.seq_len) / (
+            t1 - t0
+        )  # number of tokens processed per second.
+        print(
+            f"step: {i}, loss: {loss.item()} time: {dt:.2f}ms tokens/sec: {tokens_per_sec:.2f}"
+        )
 
 
 if __name__ == "__main__":

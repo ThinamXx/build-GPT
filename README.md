@@ -30,6 +30,9 @@ I am reading these papers:
 ✅ Implement the data loading pipeline for the model and play with the data.  
 ✅ Work on initializing the random weights as mentioned in GPT-2 paper.  
 ✅ Learn and understand the concept of weight tying in the Transformer model.  
+☑️ Read the [Automatic Mixed Precision](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html) for enabling mixed precision training.  
+✅ Enable the mixed precision training (TF32 & BF16) in the model training.  
+☑️ Read the documentation of [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) from PyTorch.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

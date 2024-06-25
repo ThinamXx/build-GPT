@@ -75,18 +75,20 @@ class CausalMultiHeadAttention(nn.Module):
         return (attention_scores @ value), attention_scores
 
     def forward(self, x):
-        B, S, C = x.size()  # batch_size, seq_len, emb_size
+        B, T, C = x.size()  # batch_size, seq_len, emb_size
         query, key, value = self.c_attn(x).split(self.n_embd, dim=2)
 
         # (batch_size, seq_len, d_model) --> (batch_size, seq_len, h, d_k) --> (batch_size, h, seq_len, d_k)
-        query = query.view(B, S, self.n_head, C // self.n_head).transpose(1, 2)
-        key = key.view(B, S, self.n_head, C // self.n_head).transpose(1, 2)
-        value = value.view(B, S, self.n_head, C // self.n_head).transpose(1, 2)
+        query = query.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        key = key.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
+        value = value.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
 
-        x, _ = self.attention(query, key, value, S)
+        x = F.scaled_dot_product_attention(
+            query, key, value, is_causal=True
+        )  # using flash attention.
 
         # (batch_size, h, seq_len, d_k) --> (batch_size, seq_len, h, d_k) --> (batch_size, seq_len, d_model)
-        x = x.transpose(1, 2).contiguous().view(B, S, C)
+        x = x.transpose(1, 2).contiguous().view(B, T, C)
 
         x = self.c_proj(x)  # (batch_size, seq_len, d_model)
         return x

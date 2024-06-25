@@ -11,10 +11,6 @@ torch.manual_seed(2024)
 if torch.cuda.is_available():
     torch.cuda.manual_seed(2024)
 
-torch.set_float32_matmul_precision(
-    "high"
-)  # set "high" if GPU supports TF32 for 8x throughput.
-
 # initialize the device.
 device = "cpu"
 if torch.cuda.is_available():
@@ -56,6 +52,10 @@ class DataLoader:
 
 
 def train():
+    torch.set_float32_matmul_precision(
+        "high"
+    )  # set "high" if GPU supports TF32 for 8x throughput.
+
     # initialize the model.
     model = GPT(GPTConfig())
     model.to(device)

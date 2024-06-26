@@ -10,7 +10,7 @@ This repo is referenced from the [build-nanogpt](https://github.com/karpathy/bui
 ### **Papers 📄**  
 I am reading these papers:  
 ✅ [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)  
-☑️ [Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165)  
+✅ [Language Models are Few-Shot Learners](https://arxiv.org/pdf/2005.14165)  
 ✅ [Attention is All You Need](https://arxiv.org/abs/1706.03762)  
 ✅ [Gaussian Error Linear Units (GELUs)](https://arxiv.org/abs/1606.08415)  
 ✅ [Using the Output Embedding to Improve Language Models](https://arxiv.org/abs/1608.05859)  
@@ -36,6 +36,8 @@ I am reading these papers:
 ✅ Read the [Automatic Mixed Precision](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html) for enabling mixed precision training and automatic type casting.    
 ✅ Enable the mixed precision training (TF32 & BF16) in the model training.  
 ✅ Read the documentation of [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) from PyTorch.  
+✅ Implement and understand global gradient clipping in the model training.  
+✅ Implement and understand the learning rate scheduling in the model training.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

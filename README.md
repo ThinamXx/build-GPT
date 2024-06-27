@@ -38,6 +38,7 @@ I am reading these papers:
 ✅ Read the documentation of [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) from PyTorch.  
 ✅ Implement and understand global gradient clipping in the model training.  
 ✅ Implement and understand the learning rate scheduling in the model training.  
+✅ Implement and understand the weight decay using AdamW optimizer and fused optimizer.   
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

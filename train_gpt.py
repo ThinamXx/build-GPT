@@ -89,13 +89,11 @@ def train():
     # initialize the model.
     model = GPT(GPTConfig(vocab_size=50304))
     model.to(device)
-    # model = torch.compile(model)
+    model = torch.compile(model)
 
     train_loader = DataLoader(batch_size=8, seq_len=1024)
 
-    optimizer = torch.optim.AdamW(
-        model.parameters(), lr=3e-4, betas=(0.9, 0.95), eps=1e-8
-    )
+    optimizer = model.configure_optimizer(weight_decay=0.1, lr=6e-4, device=device)
     for step in range(max_steps):
         t0 = time.time()
         x, y = train_loader.next_batch()

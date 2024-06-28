@@ -36,9 +36,11 @@ I am reading these papers:
 ✅ Read the [Automatic Mixed Precision](https://pytorch.org/tutorials/recipes/recipes/amp_recipe.html) for enabling mixed precision training and automatic type casting.    
 ✅ Enable the mixed precision training (TF32 & BF16) in the model training.  
 ✅ Read the documentation of [torch.compile](https://pytorch.org/tutorials/intermediate/torch_compile_tutorial.html) from PyTorch.  
+✅ Implement the torch.compile and flash attention in the model training.  
 ✅ Implement and understand global gradient clipping in the model training.  
-✅ Implement and understand the learning rate scheduling in the model training.  
-✅ Implement and understand the weight decay using AdamW optimizer and fused optimizer.   
+✅ Implement and understand the cosine learning rate scheduling in the model training.  
+✅ Implement and understand the weight decay using AdamW optimizer and fused optimizer.  
+✅ Implement and understand the gradient accumulation in the model training.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

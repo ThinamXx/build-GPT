@@ -77,10 +77,22 @@ def cosine_lr_schedule(max_lr, warmup_steps, max_steps, cur_step):
 
 
 def train():
-    # initialize the hyperparameters.
+    # initialize the configurations.
     max_lr = 6e-4
     warmup_steps = 10
     max_steps = 50
+
+    # initialize the gradient accumulation.
+    total_batch_size = 131072  # 2^17 which is the multiple of 2.
+    B = 8  # batch size.
+    T = 1024  # sequence length.
+    assert (
+        total_batch_size % (B * T) == 0
+    ), "total_batch_size must be divisible by (B * T)."
+    gradient_accumulation_steps = total_batch_size // (B * T)
+    print(
+        f"total_batch_size: {total_batch_size} => gradient_accumulation_steps: {gradient_accumulation_steps}"
+    )
 
     torch.set_float32_matmul_precision(
         "high"
@@ -91,19 +103,25 @@ def train():
     model.to(device)
     model = torch.compile(model)
 
-    train_loader = DataLoader(batch_size=8, seq_len=1024)
+    train_loader = DataLoader(batch_size=B, seq_len=T)
 
     optimizer = model.configure_optimizer(weight_decay=0.1, lr=6e-4, device=device)
     for step in range(max_steps):
         t0 = time.time()
-        x, y = train_loader.next_batch()
-        x, y = x.to(device), y.to(device)
         optimizer.zero_grad()
-        # enable autocast to use bfloat16 as mentioned here:
-        # https://pytorch.org/docs/stable/amp.html#autocasting
-        with torch.autocast(device_type=device, dtype=torch.bfloat16):
-            logits, loss = model(x, y)
-        loss.backward()
+        loss_accum = 0.0
+        for micro_step in range(gradient_accumulation_steps):
+            x, y = train_loader.next_batch()
+            x, y = x.to(device), y.to(device)
+            # enable autocast to use bfloat16 as mentioned here:
+            # https://pytorch.org/docs/stable/amp.html#autocasting
+            with torch.autocast(device_type=device, dtype=torch.bfloat16):
+                logits, loss = model(x, y)
+            # scale the loss for gradient accumulation, since the loss should be MEAN of the losses
+            # across the micro-steps, not the SUM of the losses.
+            loss = loss / gradient_accumulation_steps
+            loss_accum += loss.detach()  # detach the loss to avoid memory leak.
+            loss.backward()
         # global gradient norm clipping as mentioned in GPT-3 paper at Appendix B, page 43.
         norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         # cosine learning rate schedule as mentioned in GPT-3 paper at Appendix B, page 43.
@@ -114,13 +132,14 @@ def train():
         torch.cuda.synchronize()  # wait for the computation to finish.
         t1 = time.time()
         dt = (t1 - t0) * 1000  # in milliseconds.
-        tokens_per_sec = (train_loader.batch_size * train_loader.seq_len) / (
+        tokens_per_sec = (
+            train_loader.batch_size * train_loader.seq_len * gradient_accumulation_steps
+        ) / (
             t1 - t0
         )  # number of tokens processed per second.
         print(
-            f"step: {step:4d} | loss: {loss.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | time: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}"
+            f"step: {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | time: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}"
         )
-
 
 if __name__ == "__main__":
     train()

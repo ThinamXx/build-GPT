@@ -42,6 +42,8 @@ I am reading these papers:
 ✅ Implement and understand the weight decay using AdamW optimizer and fused optimizer.  
 ✅ Implement and understand the gradient accumulation in the model training.  
 ☑️ Read the documentation of [DistributedDataParallel](https://pytorch.org/docs/master/generated/torch.nn.parallel.DistributedDataParallel.html#torch.nn.parallel.DistributedDataParallel) from PyTorch.  
+☑️ Implement the distributed training using DDP in the model training.  
+☑️ Reading the [FineWeb](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1) blogpost for preparing the dataset at scale.   
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

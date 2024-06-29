@@ -26,7 +26,8 @@ class DataLoader:
         tokenizer = tiktoken.get_encoding("gpt2")
         tokens = tokenizer.encode(text)
         self.tokens = torch.tensor(tokens)
-        print(f"total tokens: {len(self.tokens)}")
+        if self.process_rank == 0:
+            print(f"total tokens: {len(self.tokens)}")
 
         # state variables.
         self.cur_pos = self.batch_size * self.seq_len * self.process_rank
@@ -103,6 +104,9 @@ def train():
             device = "mps"
         print(f"using device: {device}")
 
+    # set the device type for the model because we need "cuda"  for autocast.
+    device_type = "cuda" if device.startswith("cuda") else "cpu"
+
     # set the seed for reproducibility.
     torch.manual_seed(2024)
     if torch.cuda.is_available():
@@ -139,10 +143,12 @@ def train():
     model = torch.compile(model)
     if ddp:
         model = DDP(model, device_ids=[ddp_local_rank])
-    
-    raw_model = model.module if ddp else model # get the underlying model.
 
-    optimizer = raw_model.configure_optimizer(weight_decay=0.1, lr=6e-4, device=device)
+    raw_model = model.module if ddp else model  # get the underlying model.
+
+    optimizer = raw_model.configure_optimizer(
+        weight_decay=0.1, lr=6e-4, device=device_type, process_rank=ddp_rank
+    )
     for step in range(max_steps):
         t0 = time.time()
         optimizer.zero_grad()
@@ -152,7 +158,7 @@ def train():
             x, y = x.to(device), y.to(device)
             # enable autocast to use bfloat16 as mentioned here:
             # https://pytorch.org/docs/stable/amp.html#autocasting
-            with torch.autocast(device_type=device, dtype=torch.bfloat16):
+            with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
                 logits, loss = model(x, y)
             # scale the loss for gradient accumulation, since the loss should be MEAN of the losses
             # across the micro-steps, not the SUM of the losses.
@@ -177,7 +183,8 @@ def train():
         for param_group in optimizer.param_groups:
             param_group["lr"] = lr
         optimizer.step()
-        torch.cuda.synchronize()  # wait for the computation to finish.
+        if device_type == "cuda":
+            torch.cuda.synchronize()  # wait for the computation to finish.
         t1 = time.time()
         dt = (t1 - t0) * 1000  # in milliseconds.
         tokens_per_sec = (

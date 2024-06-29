@@ -41,6 +41,7 @@ I am reading these papers:
 ✅ Implement and understand the cosine learning rate scheduling in the model training.  
 ✅ Implement and understand the weight decay using AdamW optimizer and fused optimizer.  
 ✅ Implement and understand the gradient accumulation in the model training.  
+☑️ Read the documentation of [DistributedDataParallel](https://pytorch.org/docs/master/generated/torch.nn.parallel.DistributedDataParallel.html#torch.nn.parallel.DistributedDataParallel) from PyTorch.  
 ☑️ Code the training script for GPT-2 model.  
 ☑️ Work on optimization and training the model on a example dataset.  
 

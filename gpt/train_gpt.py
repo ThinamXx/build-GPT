@@ -9,7 +9,7 @@ from torch.distributed import init_process_group, destroy_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 
-from gpt.model import GPT, GPTConfig
+from model import GPT, GPTConfig
 
 
 class DataLoader:
@@ -114,7 +114,7 @@ def train():
 
     # initialize the gradient accumulation.
     total_batch_size = 262144  # 2^18 which is the multiple of 2.
-    B = 16  # batch size.
+    B = 8  # batch size.
     T = 1024  # sequence length.
     assert (
         total_batch_size % (B * T * ddp_world_size) == 0
@@ -209,5 +209,5 @@ if __name__ == "__main__":
     train()
 
 # instructions to run the code.
-# simple run with one GPU: python train_gpt.py
-# run with DDP: torchrun --standalone --nproc_per_node=4 train_gpt.py
+# simple run with one GPU: python ./gpt/train_gpt.py
+# run with DDP: torchrun --standalone --nproc_per_node=4 ./gpt/train_gpt.py

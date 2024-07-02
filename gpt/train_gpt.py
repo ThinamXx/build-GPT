@@ -1,7 +1,7 @@
 import os
-import tiktoken
 import time
 import math
+import numpy as np
 
 import torch
 import torch.nn.functional as F
@@ -12,24 +12,39 @@ import torch.distributed as dist
 from model import GPT, GPTConfig
 
 
+def load_tokens(filename):
+    """Function to load the tokens from the shard file."""
+    tokens = np.load(filename)
+    tokens = tokens.astype(np.int32)
+    tok_tensor = torch.tensor(tokens, dtype=torch.long)
+    return tok_tensor
+
+
 class DataLoader:
     """Distributed DataLoader for GPT training."""
 
-    def __init__(self, batch_size, seq_len, process_rank, num_processes):
+    def __init__(self, batch_size, seq_len, process_rank, num_processes, split):
         self.batch_size = batch_size
         self.seq_len = seq_len
         self.process_rank = process_rank
         self.num_processes = num_processes
+        assert split in ["train", "val"], "split must be either 'train' or 'val'."
 
-        with open("data/input.txt", "r") as f:
-            text = f.read()
-        tokenizer = tiktoken.get_encoding("gpt2")
-        tokens = tokenizer.encode(text)
-        self.tokens = torch.tensor(tokens)
+        # load the tokens from the shard files.
+        data_root = "/home/ubuntu/bin/build-GPT/data/edu_fineweb10B"
+        shards = os.listdir(data_root)
+        shards = [s for s in shards if s in split]
+        shards = sorted(shards)
+        shards = [os.path.join(data_root, s) for s in shards]
+        self.shards = shards
+        assert len(shards) > 0, f"no shards found for split: {split}"
         if self.process_rank == 0:
-            print(f"total tokens: {len(self.tokens)}")
+            print(f"loading {len(shards)} shards for split: {split}")
+        self.reset()
 
-        # state variables.
+    def reset(self):
+        self.cur_shard = 0
+        self.tokens = load_tokens(self.shards[self.cur_shard])
         self.cur_pos = self.batch_size * self.seq_len * self.process_rank
 
     def next_batch(self):
@@ -38,8 +53,10 @@ class DataLoader:
         x = (tokens_tensors[:-1]).view(B, T)  # (batch, seq_len)
         y = (tokens_tensors[1:]).view(B, T)
         self.cur_pos += B * T * self.num_processes  # move the pointer.
-
-        if self.cur_pos + (B * T * self.num_processes + 1) >= len(self.tokens):
+        # if loading the next batch crosses the shard boundary, load the next shard.
+        if self.cur_pos + (B * T * self.num_processes + 1) > len(self.tokens):
+            self.cur_shard = (self.cur_shard + 1) % len(self.shards)
+            self.tokens = load_tokens(self.shards[self.cur_shard])
             self.cur_pos = self.batch_size * self.seq_len * self.process_rank
 
         return x, y
@@ -72,8 +89,13 @@ def cosine_lr_schedule(max_lr, warmup_steps, max_steps, cur_step):
 def train():
     # initialize the configurations.
     max_lr = 6e-4
-    warmup_steps = 10
-    max_steps = 50
+    warmup_steps = 713  # 187e6 / 262144 = 713, refer to GPT-3 paper at Appendix B.
+    max_steps = 38146  # 10e9 / 262144 = 38146
+
+    # initialize the gradient accumulation.
+    total_batch_size = 262144  # 2^18 tokens per step, which is half of the GPT-3.
+    B = 8  # batch size.
+    T = 1024  # sequence length.
 
     # setting up the distributed data parallel (DDP).
     # torchrun sets up the environment variables for RANK, LOCAL_RANK, WORLD_SIZE.
@@ -112,10 +134,6 @@ def train():
     if torch.cuda.is_available():
         torch.cuda.manual_seed(2024)
 
-    # initialize the gradient accumulation.
-    total_batch_size = 262144  # 2^18 which is the multiple of 2.
-    B = 8  # batch size.
-    T = 1024  # sequence length.
     assert (
         total_batch_size % (B * T * ddp_world_size) == 0
     ), "total_batch_size must be divisible by (B * T * ddp_world_size)."
@@ -131,6 +149,7 @@ def train():
         seq_len=T,
         process_rank=ddp_rank,
         num_processes=ddp_world_size,
+        split="train",
     )
 
     torch.set_float32_matmul_precision(

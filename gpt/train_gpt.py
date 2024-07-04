@@ -31,9 +31,9 @@ class DataLoader:
         assert split in ["train", "val"], "split must be either 'train' or 'val'."
 
         # load the tokens from the shard files.
-        data_root = "/home/ubuntu/bin/build-GPT/data/edu_fineweb10B"
+        data_root = "/root/build-GPT/data/edu_fineweb10B"
         shards = os.listdir(data_root)
-        shards = [s for s in shards if s in split]
+        shards = [s for s in shards if split in s]
         shards = sorted(shards)
         shards = [os.path.join(data_root, s) for s in shards]
         self.shards = shards

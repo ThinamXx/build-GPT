@@ -10,6 +10,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 
 from model import GPT, GPTConfig
+from inference import generate_text
 
 
 def load_tokens(filename):
@@ -151,6 +152,13 @@ def train():
         num_processes=ddp_world_size,
         split="train",
     )
+    val_loader = DataLoader(
+        batch_size=B,
+        seq_len=T,
+        process_rank=ddp_rank,
+        num_processes=ddp_world_size,
+        split="val",
+    )
 
     torch.set_float32_matmul_precision(
         "high"
@@ -159,7 +167,12 @@ def train():
     # initialize the model.
     model = GPT(GPTConfig(vocab_size=50304))
     model.to(device)
-    model = torch.compile(model)
+
+    # compile the model for faster performance.
+    use_compile = True
+    if use_compile:
+        model = torch.compile(model)
+
     if ddp:
         model = DDP(model, device_ids=[ddp_local_rank])
 
@@ -170,6 +183,44 @@ def train():
     )
     for step in range(max_steps):
         t0 = time.time()
+
+        # enable the evaluation mode.
+        if step % 100 == 0:
+            model.eval()
+            val_loader.reset()  # reset the val_loader.
+            with torch.no_grad():
+                val_loss_accum = 0.0
+                val_accum_steps = 20
+                for _ in range(val_accum_steps):
+                    x, y = val_loader.next_batch()
+                    x, y = x.to(device), y.to(device)
+                    # enable autocast to use bfloat16 as mentioned here:
+                    # https://pytorch.org/docs/stable/amp.html#autocasting
+                    with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
+                        logits, loss = model(x, y)
+                    loss = loss / val_accum_steps
+                    val_loss_accum += loss.detach()
+                    if ddp:
+                        # calculate the average loss across all the processes or ranks.
+                        dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
+                    if master_process:
+                        print(
+                            f"val step: {step:4d} | validation loss: {val_loss_accum.item():.4f}"
+                        )
+
+        # generate samples using the model.
+        if (step > 0 and step % 100 == 0) and (not use_compile):
+            # when using torch.compile(), we cannot generate useful samples, so
+            # we skip the generation step.
+            generate_text(
+                model,
+                "Hello, I'm a language model,",
+                max_len=30,
+                num_return_sequences=2,
+            )
+
+        # enable the training mode.
+        model.train()
         optimizer.zero_grad()
         loss_accum = 0.0
         for micro_step in range(gradient_accumulation_steps):
@@ -192,7 +243,7 @@ def train():
             loss.backward()
 
         if ddp:
-            # all-reduce the gradients across all the processes.
+            # calculate the average loss across all the processes or ranks.
             dist.all_reduce(loss_accum, op=dist.ReduceOp.AVG)
 
         # global gradient norm clipping as mentioned in GPT-3 paper at Appendix B, page 43.

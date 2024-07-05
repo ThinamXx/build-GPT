@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from model import GPT, GPTConfig
 
 
-def generate_text(prompt, max_len=30, num_return_sequences=1):
+def generate_text(model, prompt, max_len=30, num_return_sequences=1):
     """Function to generate text using the GPT model."""
     device = "cpu"
     if torch.cuda.is_available():
@@ -14,8 +14,6 @@ def generate_text(prompt, max_len=30, num_return_sequences=1):
         device = "mps"
     print(f"using device: {device}")
 
-    # model = GPT.from_pretrained("gpt2")  # loading the gpt2 checkpoints from HF.
-    model = GPT(GPTConfig())  # initialize the model with random weights.
     model.eval()
     model = model.to(device)
 
@@ -32,7 +30,10 @@ def generate_text(prompt, max_len=30, num_return_sequences=1):
     # generate the text.
     while x.size(1) < max_len:
         with torch.no_grad():
-            logits, _ = model(x)  # (batch, seq_len, vocab_size)
+            # enable autocast to use bfloat16 as mentioned here:
+            # https://pytorch.org/docs/stable/amp.html#autocasting
+            with torch.autocast(device_type=device, dtype=torch.bfloat16):
+                logits, loss = model(x)  # (batch, seq_len, vocab_size)
             # get the last token logits.
             logits = logits[:, -1, :]  # (batch, vocab_size)
             probs = F.softmax(logits, dim=-1)  # get the probabilities.
@@ -60,5 +61,9 @@ if __name__ == "__main__":
     torch.manual_seed(2024)
     torch.cuda.manual_seed(2024)
 
+    # load the model.
+    model = GPT.from_pretrained("gpt2")  # loading the gpt2 checkpoints from HF.
+    # model = GPT(GPTConfig())  # initialize the model with random weights.
+
     prompt = "Hello, I'm a language model,"
-    generate_text(prompt, max_len=30, num_return_sequences=3)
+    generate_text(model, prompt, max_len=30, num_return_sequences=3)

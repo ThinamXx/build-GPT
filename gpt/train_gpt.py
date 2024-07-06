@@ -32,7 +32,7 @@ class DataLoader:
         assert split in ["train", "val"], "split must be either 'train' or 'val'."
 
         # load the tokens from the shard files.
-        data_root = "/root/build-GPT/data/edu_fineweb10B"
+        data_root = "/root/bin/build-GPT/data/data/edu_fineweb10B"
         shards = os.listdir(data_root)
         shards = [s for s in shards if split in s]
         shards = sorted(shards)
@@ -200,17 +200,17 @@ def train():
                         logits, loss = model(x, y)
                     loss = loss / val_accum_steps
                     val_loss_accum += loss.detach()
-                    if ddp:
-                        # calculate the average loss across all the processes or ranks.
-                        dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
-                    if master_process:
-                        print(
-                            f"val step: {step:4d} | validation loss: {val_loss_accum.item():.4f}"
-                        )
+            if ddp:
+                # calculate the average loss across all the processes or ranks.
+                dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
+            if master_process:
+                print(
+                    f"val step: {step:4d} | validation loss: {val_loss_accum.item():.4f}"
+                )
 
         # generate samples using the model.
         if (step > 0 and step % 100 == 0) and (not use_compile):
-            # when using torch.compile(), we cannot generate useful samples, so
+            # when using torch.compile() to generate the samples, we get errors, so
             # we skip the generation step.
             generate_text(
                 model,

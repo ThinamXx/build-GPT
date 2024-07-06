@@ -17,6 +17,7 @@ I am reading these papers:
 ☑️ [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)  
 ☑️ [FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)  
 ☑️ [Online normalizer calculation for softmax](https://arxiv.org/abs/1805.02867)  
+☑️ [HellaSwag: Can a Machine Really Finish Your Sentence?](https://arxiv.org/abs/1905.07830)  
 
 
 ### **Goals 🎯**
@@ -42,10 +43,12 @@ I am reading these papers:
 ✅ Implement and understand the weight decay using AdamW optimizer and fused optimizer.  
 ✅ Implement and understand the gradient accumulation in the model training.  
 ☑️ Read the documentation of [DistributedDataParallel](https://pytorch.org/docs/master/generated/torch.nn.parallel.DistributedDataParallel.html#torch.nn.parallel.DistributedDataParallel) from PyTorch.  
-☑️ Implement the distributed training using DDP in the model training.  
-☑️ Reading the [FineWeb](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1) blogpost for preparing the dataset at scale.   
-☑️ Code the training script for GPT-2 model.  
-☑️ Work on optimization and training the model on a example dataset.  
+✅ Implement the distributed training using DDP in the model training.  
+✅ Reading the [FineWeb](https://huggingface.co/spaces/HuggingFaceFW/blogpost-fineweb-v1) blogpost for preparing the dataset at scale.   
+✅ Implement the script to download and preprocess the FineWeb dataset for training.  
+✅ Implement the code for the validation loop and sample generation from the model while training.  
+✅ Code the training script for GPT-2 model.  
+✅ Work on optimization and training the model on FineWeb dataset.    
 
 
 ### **Github Repositories**

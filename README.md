@@ -17,7 +17,7 @@ I am reading these papers:
 ☑️ [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135)  
 ☑️ [FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691)  
 ☑️ [Online normalizer calculation for softmax](https://arxiv.org/abs/1805.02867)  
-☑️ [HellaSwag: Can a Machine Really Finish Your Sentence?](https://arxiv.org/abs/1905.07830)  
+✅ [HellaSwag: Can a Machine Really Finish Your Sentence?](https://arxiv.org/abs/1905.07830)  
 
 
 ### **Goals 🎯**
@@ -58,6 +58,7 @@ I am reading these papers:
 🌐 [modeling-gpt2](https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py) - PyTorch implementation of GPT-2 by HuggingFace.  
 🌐 [Meta-llama](https://github.com/ThinamXx/Meta-llama/tree/main) - Implementation of Llama by Thinam Tamang.  
 🌐 [flash-attention](https://github.com/Dao-AILab/flash-attention) - Implementation of Flash Attention by Tri Dao.  
+🌐 [hellaswag](https://github.com/rowanz/hellaswag) - Implementation of HellaSwag by Rowan Zellers.  
 
 
 ### **Important Notes 🍀**

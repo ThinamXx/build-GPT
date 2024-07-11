@@ -163,3 +163,5 @@ cython_debug/
 
 .vscode/
 data/edu_fineweb*
+logs
+data/hella*

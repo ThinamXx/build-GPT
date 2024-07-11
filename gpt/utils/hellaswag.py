@@ -111,7 +111,7 @@ def evaluate_model(model_type, device="cuda"):
     torch.set_float32_matmul_precision("high")  # set the TF32 precision.
     model = GPT2LMHeadModel.from_pretrained(model_type).to(device)
     model = model.eval()  # set the model to evaluation mode.
-    model = torch.compile(model)  # compile the model.
+    # model = torch.compile(model)  # compile the model.
 
     num_correct = 0
     num_correct_norm = 0
@@ -123,11 +123,11 @@ def evaluate_model(model_type, device="cuda"):
         # enable autocast to use bfloat16 as mentioned here:
         # https://pytorch.org/docs/stable/amp.html#autocasting
         with torch.autocast(device_type=device, dtype=torch.bfloat16):
-            logits = model(tokens).logits  # get the logits.
+            logits = model(tokens).logits  # (batch, seq_len, vocab_size)
 
         # evaluate autoregressive loss likelihoods.
-        shifted_logits = (logits[..., :-1, :]).contiguous()
-        shifted_tokens = (tokens[..., 1:]).contiguous()
+        shifted_logits = (logits[..., :-1, :]).contiguous()  # skip the last token.
+        shifted_tokens = (tokens[..., 1:]).contiguous()  # skip the first token.
         flat_shifted_logits = shifted_logits.view(-1, shifted_logits.size(-1))
         flat_shifted_tokens = shifted_tokens.view(-1)
         shift_loss = F.cross_entropy(

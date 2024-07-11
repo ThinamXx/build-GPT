@@ -11,6 +11,7 @@ import torch.distributed as dist
 
 from model import GPT, GPTConfig
 from inference import generate_text
+from utils.hellaswag import iterate_example, render_example
 
 
 def load_tokens(filename):
@@ -85,6 +86,31 @@ def cosine_lr_schedule(max_lr, warmup_steps, max_steps, cur_step):
     )  # coeff starts at 1 and goes to 0
 
     return min_lr + coeff * (max_lr - min_lr)
+
+
+def get_most_likely_sequence(tokens, mask, logits):
+    """Function to get the most likely sequence from the logits."""
+
+    # evaluate autoregressive loss likelihoods.
+    shifted_logits = (logits[..., :-1, :]).contiguous()  # skip the last token.
+    shifted_tokens = (tokens[..., 1:]).contiguous()  # skip the first token.
+    flat_shifted_logits = shifted_logits.view(-1, shifted_logits.size(-1))
+    flat_shifted_tokens = shifted_tokens.view(-1)
+    shift_loss = F.cross_entropy(
+        flat_shifted_logits, flat_shifted_tokens, reduction="none"
+    )
+    shift_loss = shift_loss.view(tokens.size(0), -1)
+
+    # get the average loss for each example.
+    shift_mask = (mask[..., 1:]).contiguous()
+    masked_shift_loss = shift_loss * shift_mask
+    sum_loss = masked_shift_loss.sum(dim=1)
+    avg_loss = sum_loss / shift_mask.sum(dim=1)
+
+    # now get the likelihood of the correct completion.
+    pred_norm = avg_loss.argmin().item()
+
+    return pred_norm
 
 
 def train():
@@ -181,11 +207,20 @@ def train():
     optimizer = raw_model.configure_optimizer(
         weight_decay=0.1, lr=6e-4, device=device_type, process_rank=ddp_rank
     )
+
+    # saving the checkpoints and logs.
+    log_dir = "/root/bin/build-GPT/logs"
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, f"log.txt")
+    with open(log_file, "w") as f:
+        pass
+
     for step in range(max_steps):
         t0 = time.time()
+        last_step = step == max_steps - 1
 
         # enable the evaluation mode.
-        if step % 100 == 0:
+        if step % 250 == 0 or last_step:
             model.eval()
             val_loader.reset()  # reset the val_loader.
             with torch.no_grad():
@@ -205,8 +240,51 @@ def train():
                 dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
             if master_process:
                 print(
-                    f"val step: {step:4d} | validation loss: {val_loss_accum.item():.4f}"
+                    f"val step: {step} | validation loss: {val_loss_accum.item():.4f}"
                 )
+                with open(log_file, "a") as f:
+                    f.write(
+                        f"val step: {step} | validation loss: {val_loss_accum.item():.4f}\n"
+                    )
+
+        # evaluation of the model on the Hellaswag dataset.
+        if (step % 250 == 0 or last_step) and (not use_compile):
+            num_total = 0
+            num_correct_norm = 0
+            for i, example in enumerate(iterate_example("val")):
+                # only process where i % ddp_world_size == ddp_rank.
+                if i % ddp_world_size != ddp_rank:
+                    continue
+                _, tokens, mask, label = render_example(example)  # render the example.
+                tokens = tokens.to(device)
+                mask = mask.to(device)
+
+                # get the logits from the model.
+                with torch.no_grad():
+                    with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
+                        logits, loss = model(tokens)
+                    pred_norm = get_most_likely_sequence(tokens, mask, logits)
+                num_total += 1
+                num_correct_norm += int(pred_norm == label)
+
+            # accumulate the statistics.
+            if ddp:
+                # calculate the average loss across all the processes or ranks.
+                num_total_tensor = torch.tensor(
+                    num_total, dtype=torch.long, device=device
+                )
+                num_correct_norm_tensor = torch.tensor(
+                    num_correct_norm, dtype=torch.long, device=device
+                )
+                dist.all_reduce(num_total_tensor, op=dist.ReduceOp.SUM)
+                dist.all_reduce(num_correct_norm_tensor, op=dist.ReduceOp.SUM)
+                num_total = num_total_tensor.item()
+                num_correct_norm = num_correct_norm_tensor.item()
+            acc_norm = num_correct_norm / num_total
+            if master_process:
+                print(f"Hellaswag accuracy: {acc_norm:.4f}")
+                with open(log_file, "a") as f:
+                    f.write(f"Hellaswag accuracy: {acc_norm:.4f}\n")
 
         # generate samples using the model.
         if (step > 0 and step % 100 == 0) and (not use_compile):

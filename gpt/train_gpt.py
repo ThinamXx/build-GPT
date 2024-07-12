@@ -239,12 +239,10 @@ def train():
                 # calculate the average loss across all the processes or ranks.
                 dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
             if master_process:
-                print(
-                    f"val step: {step} | validation loss: {val_loss_accum.item():.4f}"
-                )
+                print(f"validation loss: {val_loss_accum.item():.4f}")
                 with open(log_file, "a") as f:
                     f.write(
-                        f"val step: {step} | validation loss: {val_loss_accum.item():.4f}\n"
+                        f"step: {step} | validation loss: {val_loss_accum.item():.4f}\n"
                     )
 
         # evaluation of the model on the Hellaswag dataset.
@@ -282,12 +280,12 @@ def train():
                 num_correct_norm = num_correct_norm_tensor.item()
             acc_norm = num_correct_norm / num_total
             if master_process:
-                print(f"Hellaswag accuracy: {acc_norm:.4f}")
+                print(f"hellaswag accuracy: {acc_norm:.4f}")
                 with open(log_file, "a") as f:
-                    f.write(f"Hellaswag accuracy: {acc_norm:.4f}\n")
+                    f.write(f"step: {step} | hellaswag accuracy: {acc_norm:.4f}\n")
 
         # generate samples using the model.
-        if (step > 0 and step % 100 == 0) and (not use_compile):
+        if ((step > 0 and step % 250 == 0) or last_step) and (not use_compile):
             # when using torch.compile() to generate the samples, we get errors, so
             # we skip the generation step.
             generate_text(
@@ -345,8 +343,10 @@ def train():
         )  # number of tokens processed per second.
         if master_process:
             print(
-                f"step: {step:4d} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | time: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}"
+                f"step: {step} | loss: {loss_accum.item():.6f} | lr: {lr:.4e} | norm: {norm:.4f} | time: {dt:.2f}ms | tok/sec: {tokens_per_sec:.2f}"
             )
+            with open(log_file, "a") as f:
+                f.write(f"step: {step} | train loss: {loss_accum.item():.6f}\n")
 
     # destroy the process group if DDP is enabled.
     if ddp:

@@ -245,6 +245,17 @@ def train():
                         f"step: {step} | validation loss: {val_loss_accum.item():.4f}\n"
                     )
 
+                if step > 0 and (step % 5000 == 0 or last_step):
+                    checkpoint_path = os.path.join(log_dir, f"model_{step:05d}.pt")
+                    checkpoint = {
+                        "model": raw_model.state_dict(),
+                        "config": raw_model.config,
+                        "step": step,
+                        "val_loss": val_loss_accum.item(),
+                        "optimizer": optimizer.state_dict(),
+                    }
+                    torch.save(checkpoint, checkpoint_path)
+
         # evaluation of the model on the Hellaswag dataset.
         if (step % 250 == 0 or last_step) and (not use_compile):
             num_total = 0

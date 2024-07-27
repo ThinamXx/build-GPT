@@ -55,13 +55,13 @@ class CausalMultiHeadAttention(nn.Module):
 
         # code taken from HF:
         # https://github.com/huggingface/transformers/blob/main/src/transformers/models/gpt2/modeling_gpt2.py#L142C9-L148C10
-        self.register_buffer(
-            "bias",
-            torch.tril(
-                torch.ones((config.block_size, config.block_size), dtype=torch.bool)
-            ).view(1, 1, config.block_size, config.block_size),
-            persistent=False,
-        )
+        # self.register_buffer(
+        #     "bias",
+        #     torch.tril(
+        #         torch.ones((config.block_size, config.block_size), dtype=torch.bool)
+        #     ).view(1, 1, config.block_size, config.block_size),
+        #     persistent=False,
+        # ) need to disable for flash attention.
 
     def attention(self, query, key, value, seq_len):
         d_k = query.shape[-1]
@@ -258,7 +258,7 @@ class GPT(nn.Module):
         return model
 
     def configure_optimizer(
-        self, weight_decay: float, lr: float, device: str, process_rank: int
+        self, weight_decay: float, lr: float, device_type: str, process_rank: int
     ):
         # all the parameters in the model that require gradient.
         param_dict = {pn: p for pn, p in self.named_parameters()}
@@ -287,7 +287,7 @@ class GPT(nn.Module):
 
         # create AdamW optimizer and use the "fused" version if available.
         fused_available = "fused" in inspect.signature(torch.optim.AdamW).parameters
-        use_fused = fused_available and device == "cuda"
+        use_fused = fused_available and device_type == "cuda"
         if process_rank == 0:
             # only print this on the master process.
             print(f"using {'' if use_fused else 'not '}fused AdamW")

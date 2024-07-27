@@ -313,6 +313,12 @@ def train():
         for micro_step in range(gradient_accumulation_steps):
             x, y = train_loader.next_batch()
             x, y = x.to(device), y.to(device)
+            if ddp:
+                # while using DDP, we need to sync the gradients only at the last micro-step rather
+                # than at every micro-step which is the default behavior of loss.backward().
+                model.require_backward_grad_sync = (
+                    micro_step == gradient_accumulation_steps - 1
+                )
             # enable autocast to use bfloat16 as mentioned here:
             # https://pytorch.org/docs/stable/amp.html#autocasting
             with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
@@ -321,12 +327,6 @@ def train():
             # across the micro-steps, not the SUM of the losses.
             loss = loss / gradient_accumulation_steps
             loss_accum += loss.detach()  # detach the loss to avoid memory leak.
-            if ddp:
-                # while using DDP, we need to sync the gradients only at the last micro-step rather
-                # than at every micro-step which is the default behavior of loss.backward().
-                model.require_backward_grad_sync = (
-                    micro_step == gradient_accumulation_steps - 1
-                )
             loss.backward()
 
         if ddp:

@@ -6,7 +6,6 @@ This repo is referenced from the [build-nanogpt](https://github.com/karpathy/bui
 <p style="text-align: center;">Fig a. GPT architecture</p>
 </div>
 
-
 ### **Papers 📄**  
 I am reading these papers:  
 ✅ [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)  
